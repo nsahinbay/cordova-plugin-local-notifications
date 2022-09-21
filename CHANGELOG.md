@@ -4,6 +4,8 @@ ChangeLog
 Please also read the [Upgrade Guide](https://github.com/katzer/cordova-plugin-local-notifications/wiki/Upgrade-Guide) for more information.
 
 #### Unreleased
+
+#### Version 0.9.9 (21.09.2022)
 - Fix required for Android 13 regarding notification permissions (https://outsystemsrd.atlassian.net/browse/RMET-1833)
 
 #### Version 0.9.8 (04.11.2021)
