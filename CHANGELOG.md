@@ -5,6 +5,7 @@ Please also read the [Upgrade Guide](https://github.com/katzer/cordova-plugin-lo
 
 #### Unreleased
 
+#### Version 0.9.10 (19.12.2022)
 ### 16-12-2022
 - Removed dependency to jcenter [RMET-2036](https://outsystemsrd.atlassian.net/browse/RMET-2036)
 
