@@ -149,6 +149,18 @@
             target-dir="res/xml" />
 
         <source-file
+            src="src/android/OSLCNOError.java"
+            target-dir="src/de/appplant/cordova/plugin/localnotification" />
+
+        <source-file
+            src="src/android/OSLCNOWarning.java"
+            target-dir="src/de/appplant/cordova/plugin/localnotification" />
+
+        <source-file
+            src="src/android/OSLCNOPluginMessage.java"
+            target-dir="src/de/appplant/cordova/plugin/localnotification" />
+
+        <source-file
             src="src/android/LocalNotification.java"
             target-dir="src/de/appplant/cordova/plugin/localnotification" />
 

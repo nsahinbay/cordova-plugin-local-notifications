@@ -23,10 +23,13 @@
 
 package de.appplant.cordova.plugin.localnotification;
 
+import static android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
@@ -45,6 +48,7 @@ import org.json.JSONObject;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import de.appplant.cordova.plugin.notification.Manager;
 import de.appplant.cordova.plugin.notification.Notification;
@@ -84,6 +88,14 @@ public class LocalNotification extends CordovaPlugin {
     private JSONArray notificationArguments = null;
 
     /**
+     * We need this variable because the onResume is being called when user
+     * grants permissions to receive notifications. What a mess.
+     */
+    private boolean requestingNotificationsPermissions = false;
+    private boolean requestingExactAlarmPermission = false;
+    private OSLCNOWarning warning = null;
+
+    /**
      * Called after plugin construction and fields have been initialized.
      * Prefer to use pluginInitialize instead since there is no value in
      * having parameters on the initialize() function.
@@ -102,6 +114,13 @@ public class LocalNotification extends CordovaPlugin {
     public void onResume (boolean multitasking) {
         super.onResume(multitasking);
         deviceready();
+
+        if(!requestingNotificationsPermissions && requestingExactAlarmPermission) {
+            requestingExactAlarmPermission = false;
+            onScheduleExactAlarmPermissionResult();
+        }
+
+        requestingNotificationsPermissions = false;
     }
 
     /**
@@ -217,7 +236,7 @@ public class LocalNotification extends CordovaPlugin {
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
         super.onRequestPermissionResult(requestCode, permissions, grantResults);
         if(requestCode == NOTIFICATION_PERMISSION_CODE){
-            scheduleWithPermission();
+            schedule(notificationArguments, callbackContext);
         }
     }
 
@@ -292,10 +311,16 @@ public class LocalNotification extends CordovaPlugin {
         callbackContext = command;
         notificationArguments = toasts;
 
-        if(Build.VERSION.SDK_INT >= 33 && !PermissionHelper.hasPermission(this, NOTIFICATION_PERMISSION)){
+        if(Build.VERSION.SDK_INT >= 33
+        && !PermissionHelper.hasPermission(this, NOTIFICATION_PERMISSION)
+        && !requestingNotificationsPermissions){
+            requestingNotificationsPermissions = true;
             PermissionHelper.requestPermission(this, NOTIFICATION_PERMISSION_CODE, NOTIFICATION_PERMISSION);
         }
-        else{
+        else if(hasAnyExactNotification() && !getNotMgr().canScheduleExactAlarms()) {
+            requestScheduleExactAlarmPermission();
+        }
+        else {
             scheduleWithPermission();
         }
     }
@@ -313,7 +338,92 @@ public class LocalNotification extends CordovaPlugin {
                 fireEvent("add", toast);
             }
         }
-        success(callbackContext, true);
+
+        sendScheduleResult(callbackContext, PluginResult.Status.OK, warning);
+        warning = null;
+
+    }
+
+    /**
+     * Checks if there's any notification to be scheduled as exact.
+     *
+     * @return true if there's at least one exact notification. false otherwise.
+     */
+    private boolean hasAnyExactNotification() {
+        return findOptionsWithPredicate(Options::getIsExactNotification);
+    }
+
+    /**
+     * Checks if there's any notification that is mandatory to be scheduled as exact.
+     *
+     * @return true if there's at least one mandatory notification. false otherwise.
+     */
+    private boolean hasAnyMandatoryExactNotification() {
+        return findOptionsWithPredicate(Options::getIsExactMandatory);
+    }
+
+    /**
+     * Applies a predicate for all options from notification arguments
+     *
+     * @param predicate the predicate to apply
+     * @return
+     */
+    private boolean findOptionsWithPredicate(Predicate<Options> predicate) {
+        for (int i = 0; i < notificationArguments.length(); i++) {
+            JSONObject dict = notificationArguments.optJSONObject(i);
+            Options options = new Options(cordova.getActivity(), dict);
+            if(predicate.test(options)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Sets all notification's options to be scheduled as Inexact alarms.
+     */
+    private void setAllNotificationsAsInexact() {
+        for (int i = 0; i < notificationArguments.length(); i++) {
+            JSONObject dict    = notificationArguments.optJSONObject(i);
+            Options options    = new Options(cordova.getActivity(), dict);
+            options.setIsExactNotification(false);
+        }
+    }
+
+    /**
+     * Requests user permission to schedule exact alarms.
+     * The result should be present on onResume method.
+     *
+     */
+    private void requestScheduleExactAlarmPermission() {
+        requestingExactAlarmPermission = true;
+        cordova.getContext().startActivity(new Intent(ACTION_REQUEST_SCHEDULE_EXACT_ALARM));
+    }
+
+    /**
+     * Handles user response to exact alarm permission request.
+     *
+     */
+    private void onScheduleExactAlarmPermissionResult() {
+        Boolean permissionDenied = !getNotMgr().canScheduleExactAlarms();
+
+        if(permissionDenied) {
+            if(hasAnyMandatoryExactNotification()) {
+                /*  permission was denied but there's at least one mandatory exact notification
+                 *  send an error and finish execution
+                 */
+                sendScheduleResult(callbackContext, PluginResult.Status.ERROR, OSLCNOError.EXACT_PERMISSION);
+                return;
+            }
+            /*  permission was denied and there's no mandatory exact notification
+             *  change all notifications to inexact and continue flow normally
+             *  send a warning when execution is done
+             */
+            setAllNotificationsAsInexact();
+            warning = OSLCNOWarning.EXACT_PERMISSION;
+        }
+
+        schedule(notificationArguments, callbackContext);
     }
 
     /**
@@ -559,6 +669,18 @@ public class LocalNotification extends CordovaPlugin {
     private void success(CallbackContext command, boolean arg) {
         PluginResult result = new PluginResult(PluginResult.Status.OK, arg);
         command.sendPluginResult(result);
+    }
+
+    /**
+     * Invoke error callback with a string boolean argument.
+     *
+     */
+    private void sendScheduleResult(CallbackContext command,
+                                    PluginResult.Status status,
+                                    OSLCNOPluginMessage message) {
+        command.sendPluginResult(message != null ?
+                new PluginResult(status, message.toJSONObject()) :
+                new PluginResult(status));
     }
 
     /**

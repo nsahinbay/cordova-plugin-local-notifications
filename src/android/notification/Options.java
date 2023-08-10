@@ -32,6 +32,7 @@ import android.net.Uri;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.MessagingStyle.Message;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -692,6 +693,31 @@ public final class Options {
         return (hex.charAt(0) == '#') ? hex.substring(1) : hex;
     }
 
+    /**
+     * Gets the property that dictates if the notification should be scheduled with an exact alarm.
+     */
+    public boolean getIsExactNotification() {
+        return options.optBoolean("isExactNotification", false);
+    }
+
+    /**
+     * Sets the property that dictates if the notification should be scheduled with an exact alarm.
+     */
+    public void setIsExactNotification(Boolean newValue) {
+        try {
+            options.put("isExactNotification", newValue);
+        } catch (Exception e) {
+            // this should never happen. Let's log just in case.
+            Log.e("options", "Caught security exception when setting IsExactNotification: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gets the property that dictates if its mandatory the notification should be scheduled with an exact alarm.
+     */
+    public boolean getIsExactMandatory() {
+        return options.optBoolean("isExactMandatory", false);
+    }
 }
 
 // codebeat:enable[TOO_MANY_FUNCTIONS]
