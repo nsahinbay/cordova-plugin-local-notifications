@@ -5,6 +5,7 @@ Please also read the [Upgrade Guide](https://github.com/katzer/cordova-plugin-lo
 
 #### Unreleased
 
+#### Version 0.9.11 (28.08.2023)
 ### 04-08-2023
 - Added exact and inexact notifications [RMET-2665](https://outsystemsrd.atlassian.net/browse/RMET-2665)
 - Fixed Android 14 bug [RMET-2582](https://outsystemsrd.atlassian.net/browse/RMET-2582)
