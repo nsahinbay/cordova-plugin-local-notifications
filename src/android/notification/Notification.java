@@ -239,16 +239,17 @@ public final class Notification {
             if (!date.after(new Date()) && trigger(intent, receiver))
                 continue;
 
-            PendingIntent pi;
+            int flags;
 
-            if(SDK_INT >= 31){
-                pi = PendingIntent.getBroadcast(
-                        context, 0, intent, FLAG_CANCEL_CURRENT | 33554432);
+            if (SDK_INT >= 34) {
+                flags = FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE;
+            } else if (SDK_INT >= 31) {
+                flags = FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE;
+            } else {
+                flags = FLAG_CANCEL_CURRENT;
             }
-            else{
-                pi = PendingIntent.getBroadcast(
-                        context, 0, intent, FLAG_CANCEL_CURRENT);
-            }
+
+            PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, flags);
 
             try {
                 switch (options.getPrio()) {
@@ -362,17 +363,17 @@ public final class Notification {
 
         for (String action : actions) {
             Intent intent = new Intent(action);
-
-            PendingIntent pi;
-
-            if(SDK_INT >= 31){
-                pi = PendingIntent.getBroadcast(
-                        context, 0, intent, 33554432);
+            
+            int flags = 0;
+            
+            if (SDK_INT >= 34) {
+                flags = PendingIntent.FLAG_IMMUTABLE;
+            } else if (SDK_INT >= 31) {
+                flags = PendingIntent.FLAG_MUTABLE;
             }
-            else{
-                pi = PendingIntent.getBroadcast(
-                        context, 0, intent, 0);
-            }
+
+            PendingIntent pi = PendingIntent.getBroadcast(
+                    context, 0, intent, flags);
 
             if (pi != null) {
                 getAlarmMgr().cancel(pi);

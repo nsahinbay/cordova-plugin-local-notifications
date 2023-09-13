@@ -7,6 +7,11 @@ Please also read the [Upgrade Guide](https://github.com/katzer/cordova-plugin-lo
 ### 11-09-2023
 - Android: Replace dependency on Android Support Libraries with AndroidX [RMET-2823](https://outsystemsrd.atlassian.net/browse/RMET-2823)
 
+### 12-09-2023
+- Android: Make PendingIntents immutable for Android 14 [RMET-2666](https://outsystemsrd.atlassian.net/browse/RMET-2666)
+### 11-09-2023
+- Android: Replace dependency on Android Support Libraries with AndroidX [RMET-2823](https://outsystemsrd.atlassian.net/browse/RMET-2823)
+
 #### Version 0.9.11 (28.08.2023)
 ### 04-08-2023
 - Added exact and inexact notifications [RMET-2665](https://outsystemsrd.atlassian.net/browse/RMET-2665)
