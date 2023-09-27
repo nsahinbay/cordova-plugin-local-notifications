@@ -4,9 +4,8 @@ ChangeLog
 Please also read the [Upgrade Guide](https://github.com/katzer/cordova-plugin-local-notifications/wiki/Upgrade-Guide) for more information.
 
 #### Unreleased
-### 11-09-2023
-- Android: Replace dependency on Android Support Libraries with AndroidX [RMET-2823](https://outsystemsrd.atlassian.net/browse/RMET-2823)
 
+#### Version 0.9.12 (27.09.2023)
 ### 12-09-2023
 - Android: Make PendingIntents immutable for Android 14 [RMET-2666](https://outsystemsrd.atlassian.net/browse/RMET-2666)
 ### 11-09-2023
