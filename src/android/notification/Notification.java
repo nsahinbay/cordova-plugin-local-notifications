@@ -385,8 +385,11 @@ public final class Notification {
      * Present the local notification to user.
      */
     public void show() {
-        // Don't show notification if the application is in foreground
-        if(applicationState == null || applicationState.equalsIgnoreCase("foreground")) return;
+        // Don't show notification if the application is in foreground and foreground option is false
+        boolean showEvenInForeground = getOptions().getDict().optBoolean("foreground", false);
+
+        if (applicationState == null || (applicationState.equalsIgnoreCase("foreground") && !showEvenInForeground))
+            return;
 
         if (builder == null) return;
 
