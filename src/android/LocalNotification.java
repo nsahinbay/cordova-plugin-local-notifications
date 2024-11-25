@@ -115,12 +115,10 @@ public class LocalNotification extends CordovaPlugin {
         super.onResume(multitasking);
         deviceready();
 
-        if(!requestingNotificationsPermissions && requestingExactAlarmPermission) {
+        if(requestingExactAlarmPermission) {
             requestingExactAlarmPermission = false;
             onScheduleExactAlarmPermissionResult();
         }
-
-        requestingNotificationsPermissions = false;
     }
 
     /**
@@ -172,7 +170,7 @@ public class LocalNotification extends CordovaPlugin {
                     actions(args, command);
                 } else
                 if (action.equals("schedule")) {
-                    schedule(args, command);
+                    schedule(args, command, true);
                 } else
                 if (action.equals("update")) {
                     update(args, command);
@@ -235,8 +233,9 @@ public class LocalNotification extends CordovaPlugin {
     @Override
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
         super.onRequestPermissionResult(requestCode, permissions, grantResults);
-        if(requestCode == NOTIFICATION_PERMISSION_CODE){
-            schedule(notificationArguments, callbackContext);
+        if (requestCode == NOTIFICATION_PERMISSION_CODE) {
+            schedule(notificationArguments, callbackContext, false);
+            requestingNotificationsPermissions = false;
         }
     }
 
@@ -306,19 +305,22 @@ public class LocalNotification extends CordovaPlugin {
      * @param toasts  The notifications to schedule.
      * @param command The callback context used when calling back into
      *                JavaScript.
+     * @param requestExactAlarmPermission whether should request exact alarm permission or not
+     *                                    (e.g. send false if already checked prior)
      */
-    private void schedule (JSONArray toasts, CallbackContext command) {
+    private void schedule (JSONArray toasts, CallbackContext command, boolean requestExactAlarmPermission) {
         callbackContext = command;
         notificationArguments = toasts;
 
-        if(Build.VERSION.SDK_INT >= 33
-        && !PermissionHelper.hasPermission(this, NOTIFICATION_PERMISSION)
-        && !requestingNotificationsPermissions){
+        if(hasAnyExactNotification() && !getNotMgr().canScheduleExactAlarms() && requestExactAlarmPermission) {
+            requestScheduleExactAlarmPermission();
+        }
+        else if(Build.VERSION.SDK_INT >= 33
+                && !PermissionHelper.hasPermission(this, NOTIFICATION_PERMISSION)
+                && !requestingNotificationsPermissions
+        ){
             requestingNotificationsPermissions = true;
             PermissionHelper.requestPermission(this, NOTIFICATION_PERMISSION_CODE, NOTIFICATION_PERMISSION);
-        }
-        else if(hasAnyExactNotification() && !getNotMgr().canScheduleExactAlarms()) {
-            requestScheduleExactAlarmPermission();
         }
         else {
             scheduleWithPermission();
@@ -423,7 +425,7 @@ public class LocalNotification extends CordovaPlugin {
             warning = OSLCNOWarning.EXACT_PERMISSION;
         }
 
-        schedule(notificationArguments, callbackContext);
+        schedule(notificationArguments, callbackContext, false);
     }
 
     /**
