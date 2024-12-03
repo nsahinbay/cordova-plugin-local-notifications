@@ -5,6 +5,9 @@ Please also read the [Upgrade Guide](https://github.com/katzer/cordova-plugin-lo
 
 #### Unreleased
 
+### 25-11-2024
+- Android: Fix endless loop of notification permission denial when granting exact alarm permission
+
 #### Version 0.9.13 (07.10.2024)
 ### 07-10-2024
 - Android: Deliver notifications while app is in foreground if `foreground` option is `true`. [RMET-3699](https://outsystemsrd.atlassian.net/browse/RMET-3699)
